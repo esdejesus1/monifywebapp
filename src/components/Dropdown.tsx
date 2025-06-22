@@ -1,19 +1,29 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-type DropdownItem = {
+export type DropdownItem = {
   label: string;
   value: string;
 };
 
-const Dropdown = ({
-  items,
-  onSelect,
-}: {
+type DropdownProps = {
   items: DropdownItem[];
   onSelect: (val: string) => void;
-}) => {
+  selected?: string | null;
+};
+
+const Dropdown = ({ items, onSelect, selected }: DropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedLabel, setSelectedLabel] = useState<string>("Select Option");
+
+  // 🔁 Update label when `selected` value changes
+  useEffect(() => {
+    if (selected) {
+      const found = items.find((item) => item.value === selected);
+      if (found) {
+        setSelectedLabel(found.label);
+      }
+    }
+  }, [selected, items]);
 
   const handleSelect = (item: DropdownItem) => {
     setSelectedLabel(item.label);
@@ -35,7 +45,7 @@ const Dropdown = ({
             <li
               key={item.value}
               onClick={() => handleSelect(item)}
-              className="p-2 hover:bg-gray-100 cursor-pointer"
+              className="p-2 hover:bg-gray-100 hover:text-black cursor-pointer"
             >
               {item.label}
             </li>

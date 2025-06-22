@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useExpense } from "../hooks/useExpense";
 import { Trash2 } from "lucide-react";
 
@@ -7,17 +7,16 @@ type ExpenseItem = {
   name: string;
 };
 
-const ExpenseList = ({
-  items,
-  onSelect,
-  onNewItemAdded,
-}: {
+type Props = {
   items: ExpenseItem[];
-  onSelect: (item: { id: string; name: string }) => void;
+  onSelect: (item: ExpenseItem) => void;
   onNewItemAdded: () => void;
-}) => {
+  selected?: ExpenseItem | null;
+};
+
+const ExpenseList = ({ items, onSelect, onNewItemAdded, selected }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selected, setSelected] = useState<string>("Select Option");
+  const [selectedLabel, setSelectedLabel] = useState("Select Option");
   const [showModal, setShowModal] = useState(false);
 
   const {
@@ -29,8 +28,15 @@ const ExpenseList = ({
     handleDeleteExpenseType,
   } = useExpense();
 
+  // ✅ Update selectedLabel when `selected` changes
+  useEffect(() => {
+    if (selected?.name) {
+      setSelectedLabel(selected.name);
+    }
+  }, [selected]);
+
   const handleSelect = (item: ExpenseItem) => {
-    setSelected(item.name);
+    setSelectedLabel(item.name);
     setIsOpen(false);
     onSelect(item);
   };
@@ -50,7 +56,7 @@ const ExpenseList = ({
         onClick={() => setIsOpen(!isOpen)}
         className="w-full bg-black border border-gray-300 text-white py-2 px-4 rounded-md text-left"
       >
-        {selected}
+        {selectedLabel}
       </button>
 
       {/* Dropdown List */}
@@ -107,9 +113,7 @@ const ExpenseList = ({
               value={expenseType}
               onChange={(e) => setExpenseType(e.target.value)}
             />
-            {error && (
-              <p className="text-red-500 text-sm mb-2">{error}</p>
-            )}
+            {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
             <div className="flex justify-end space-x-2">
               <button
                 className="bg-gray-300 px-4 py-2 rounded"

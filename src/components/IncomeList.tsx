@@ -1,23 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Trash2 } from "lucide-react";
-import  { useIncome } from "../hooks/useIncome";
+import { useIncome } from "../hooks/useIncome";
 
 type IncomeItem = {
   id: string;
   name: string;
 };
 
-const IncomeList = ({
-  items,
-  onSelect,
-  onNewItemAdded,
-}: {
+type Props = {
   items: IncomeItem[];
-  onSelect: (item: { id: string; name: string }) => void;
+  onSelect: (item: IncomeItem) => void;
   onNewItemAdded: () => void;
-}) => {
+  selected?: IncomeItem | null;
+};
+
+const IncomeList = ({ items, onSelect, onNewItemAdded, selected }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selected, setSelected] = useState<string>("Select Option");
+  const [selectedLabel, setSelectedLabel] = useState("Select Option");
   const [showModal, setShowModal] = useState(false);
 
   const {
@@ -29,8 +28,14 @@ const IncomeList = ({
     handleDeleteIncome,
   } = useIncome();
 
+  useEffect(() => {
+    if (selected?.name) {
+      setSelectedLabel(selected.name);
+    }
+  }, [selected]);
+
   const handleSelect = (item: IncomeItem) => {
-    setSelected(item.name);
+    setSelectedLabel(item.name);
     setIsOpen(false);
     onSelect(item);
   };
@@ -50,7 +55,7 @@ const IncomeList = ({
         onClick={() => setIsOpen(!isOpen)}
         className="w-full bg-black border border-gray-300 text-white py-2 px-4 rounded-md text-left"
       >
-        {selected}
+        {selectedLabel}
       </button>
 
       {/* Dropdown List */}
@@ -93,7 +98,7 @@ const IncomeList = ({
         </ul>
       )}
 
-      {/* Add New Expense Modal */}
+      {/* Add New Income Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20">
           <div className="bg-white rounded-lg p-6 w-80">
@@ -107,9 +112,7 @@ const IncomeList = ({
               value={incomeType}
               onChange={(e) => setIncomeType(e.target.value)}
             />
-            {error && (
-              <p className="text-red-500 text-sm mb-2">{error}</p>
-            )}
+            {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
             <div className="flex justify-end space-x-2">
               <button
                 className="bg-gray-300 px-4 py-2 rounded"

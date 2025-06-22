@@ -32,7 +32,10 @@ function Home() {
     transactions,
     deleteTransaction,
     fetchTransactions,
+    editTransaction
   } = useTransaction();
+
+
 
   const transactionOptions = [
   { label: "Expense", value: "Expense" },
@@ -158,6 +161,7 @@ function Home() {
         <TransactionList
           transactions={transactions}
           deleteTransaction={deleteTransaction}
+          editTransaction={editTransaction}
         />
 
 

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { collection, deleteDoc, doc, getDocs } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDocs, updateDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 
@@ -72,9 +72,46 @@ export const useTransaction = () => {
     await fetchTransactions(); // refresh after deletion
   };
 
+  const editTransaction = async(updatedTransaction: Transaction) => {
+    if(!user) return;
+
+    const col = updatedTransaction.type === 'income' ? 'income' : 'expenses';
+    const docRef = doc(db, 'users', user.uid, col, updatedTransaction.id);
+
+    try {
+      const updatedData = 
+        updatedTransaction.type === 'income'
+        ? {
+          incomeType: updatedTransaction.category,
+          amount: updatedTransaction.amount,
+          walletName: updatedTransaction.walletName,
+          description: updatedTransaction.description,
+          date: updatedTransaction.date,
+        }
+        : {
+          expenseType: updatedTransaction.category,
+          amount: updatedTransaction.amount,
+          walletName: updatedTransaction.walletName,
+          description: updatedTransaction.description,
+          date: updatedTransaction.date,
+        };
+
+        await updateDoc(docRef, updatedData);
+        await fetchTransactions();
+        return {success: true}
+    } catch (err:unknown) {
+      if (err instanceof Error) {
+        setError("Failed to update transaction");
+      }
+      return {success: false}
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchTransactions();
   }, [fetchTransactions]);
 
-  return { transactions, deleteTransaction, loading, error, fetchTransactions };
+  return { transactions, deleteTransaction, editTransaction, loading, error, fetchTransactions };
 };

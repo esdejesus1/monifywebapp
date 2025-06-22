@@ -1,9 +1,14 @@
-// hooks/useWallet.ts
-import { useEffect, useState } from "react";
-import { addDoc, collection, onSnapshot, QuerySnapshot } from "firebase/firestore";
+import { useState } from "react";
+import {
+  addDoc,
+  collection,
+  doc,
+  deleteDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "../firebase"; 
+import { auth } from "../firebase";
 
 export const useWallet = () => {
   const [walletName, setWalletName] = useState("");
@@ -31,7 +36,6 @@ export const useWallet = () => {
         balance: Number(balance),
       });
 
-      // Reset fields
       setWalletName("");
       setBalance("");
       setError(null);
@@ -48,6 +52,62 @@ export const useWallet = () => {
     }
   };
 
+  const editWallet = async (
+    id: string,
+    updatedData: { name: string; balance: number }
+  ): Promise<{ success: boolean }> => {
+    if (!user) {
+      setError("User not authenticated");
+      return { success: false };
+    }
+
+    if (!updatedData.name || updatedData.balance === null || updatedData.balance === undefined) {
+      setError("Please fill out all fields");
+      return { success: false };
+    }
+
+    setLoading(true);
+    try {
+      const walletDocRef = doc(db, "users", user.uid, "wallet", id);
+      await updateDoc(walletDocRef, {
+        name: updatedData.name,
+        balance: updatedData.balance,
+      });
+      setError(null);
+      return { success: true };
+    } catch (err: unknown) {
+      console.error("Error updating wallet:", err);
+      if (err instanceof Error) {
+        setError("Failed to update wallet");
+      }
+      return { success: false };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteWallet = async (id: string): Promise<{ success: boolean }> => {
+    if (!user) {
+      setError("User not authenticated");
+      return { success: false };
+    }
+
+    setLoading(true);
+    try {
+      const walletDocRef = doc(db, "users", user.uid, "wallet", id);
+      await deleteDoc(walletDocRef);
+      setError(null);
+      return { success: true };
+    } catch (err: unknown) {
+      console.error("Error deleting wallet:", err);
+      if (err instanceof Error) {
+        setError("Failed to delete wallet");
+      }
+      return { success: false };
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return {
     walletName,
@@ -55,17 +115,24 @@ export const useWallet = () => {
     balance,
     setBalance,
     handleCreateWallet,
+    editWallet,
+    deleteWallet,
     loading,
     error,
   };
 };
 
+
+// Add this to the bottom of useWallet.ts (or a new file)
+import { useEffect } from "react";
+import { onSnapshot, QuerySnapshot } from "firebase/firestore";
+
 interface Wallet {
   id: string;
   name: string;
   balance: number;
-  expense: number;
   income: number;
+  expense: number;
 }
 
 export const useWalletData = () => {
@@ -88,6 +155,8 @@ export const useWalletData = () => {
       (snapshot: QuerySnapshot) => {
         const walletList: Wallet[] = snapshot.docs.map((doc) => ({
           id: doc.id,
+          income: 0,
+          expense: 0,
           ...doc.data(),
         })) as Wallet[];
         setWallets(walletList);
